@@ -1,6 +1,6 @@
 {
-  "run_id": "0258d4b3d2b7443798c2d1eb38cdccb9",
-  "generated_at": "2026-07-04T16:43:53.092261+00:00",
+  "run_id": "3a38c14533754670ab257ac1ca7393e5",
+  "generated_at": "2026-07-04T20:30:08.045422+00:00",
   "n_test_rows": 300,
   "thresholds": {
     "demographic_parity_threshold": 0.1,

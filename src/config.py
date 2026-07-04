@@ -7,9 +7,18 @@ vs. the target) are defined in exactly one place.
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 import yaml
+
+# Windows consoles default to cp1252, which cannot render the emoji MLflow
+# prints when terminating a run — crashing the stage AFTER the model was
+# logged but BEFORE model_info.txt is written. Force UTF-8 once, centrally
+# (every pipeline stage imports this module). No-op on Linux/CI.
+for _stream in (sys.stdout, sys.stderr):
+    if getattr(_stream, "encoding", "utf-8").lower() not in ("utf-8", "utf8"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
 
 ROOT = Path(__file__).resolve().parents[1]
 PARAMS_PATH = ROOT / "params.yaml"
