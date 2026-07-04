@@ -21,6 +21,13 @@ linter ──▶ validate ──▶ fairness_audit ──▶ deploy
                               └─ FAIL ⇒ deploy is SKIPPED, by construction
 ```
 
+**Live proof, not claims:**
+[all four jobs green](https://github.com/Ameen-GAMAL/credit-risk-mlops-fairness/actions/runs/28720895645)
+· [the gate actually blocking a deploy](https://github.com/Ameen-GAMAL/credit-risk-mlops-fairness/actions/runs/28721066495)
+(threshold deliberately tightened below the shipped model's DP — fairness
+job red, deploy *skipped*)
+· [experiment tracking on DagsHub MLflow](https://dagshub.com/s-amin.mohamed/credit-risk-mlops-fairness.mlflow)
+
 ## Why this project is interesting
 
 1. **The fairness gate caught a real violation.** The baseline model — which
