@@ -1,0 +1,82 @@
+stages:
+  fetch_data:
+    cmd: python -m src.data.fetch_data
+    deps:
+      - src/data/fetch_data.py
+    params:
+      - fetch_data.openml_name
+      - fetch_data.openml_version
+    outs:
+      - data/raw/credit_g.csv
+
+  preprocess:
+    cmd: python -m src.data.preprocess
+    deps:
+      - src/data/preprocess.py
+      - src/config.py
+      - data/raw/credit_g.csv
+    params:
+      - preprocess.test_size
+      - preprocess.monitoring_pool_size
+      - preprocess.random_state
+      - preprocess.age_threshold
+    outs:
+      - data/processed/train.csv
+      - data/processed/test.csv
+      - data/processed/monitoring_pool.csv
+
+  make_reference_and_batches:
+    cmd: python -m src.data.make_reference_and_batches
+    deps:
+      - src/data/make_reference_and_batches.py
+      - data/processed/monitoring_pool.csv
+    params:
+      - monitoring.n_batches
+      - monitoring.batch_size
+      - monitoring.random_state
+      - monitoring.inject_drift_from_batch
+      - monitoring.drift_injection_strength
+    outs:
+      - data/reference/reference_batch.csv
+      - data/simulated_batches
+
+  train:
+    cmd: python -m src.train
+    deps:
+      - src/train.py
+      - src/features/transformers.py
+      - src/config.py
+      - data/processed/train.csv
+    params:
+      - train
+    outs:
+      # The model artifact itself lives in MLflow (models are MLflow's job,
+      # data is DVC's) — this file just carries the run id downstream.
+      - model_info.txt:
+          cache: false
+    metrics:
+      - metrics/train_metrics.json:
+          cache: false
+
+  evaluate:
+    cmd: python -m src.evaluate
+    deps:
+      - src/evaluate.py
+      - data/processed/test.csv
+      - model_info.txt
+    metrics:
+      - metrics/evaluation.json:
+          cache: false
+
+  fairness_audit:
+    cmd: python -m src.fairness.fairness_audit
+    deps:
+      - src/fairness/fairness_audit.py
+      - src/fairness/metrics.py
+      - data/processed/test.csv
+      - model_info.txt
+    params:
+      - fairness
+    metrics:
+      - metrics/fairness_report.json:
+          cache: false

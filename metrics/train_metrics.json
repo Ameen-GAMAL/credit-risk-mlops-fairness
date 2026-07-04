@@ -1,0 +1,7 @@
+{
+  "run_id": "0258d4b3d2b7443798c2d1eb38cdccb9",
+  "eg_best_gap": 0.0,
+  "eg_n_predictors": 14,
+  "train_accuracy": 0.774,
+  "train_f1": 0.8503311258278146
+}

@@ -1,0 +1,152 @@
+name: ML Validation, Fairness Gate & Deployment
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  # ── JOB 1 ── always runs: fast static check, no data/model access ──────────
+  linter:
+    name: Lint Codebase
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install flake8
+      - run: flake8 src scripts tests
+
+  # ── JOB 2 ── train + evaluate, gated on branch + commit-message trigger ────
+  # (same [run-train] convention as the course Assign-5 pipeline)
+  validate:
+    name: Train, Evaluate & Track (MLflow)
+    runs-on: ubuntu-latest
+    needs: linter
+    if: |
+      github.ref == 'refs/heads/main' &&
+      (contains(github.event.head_commit.message, '[run-train]') || github.event_name == 'workflow_dispatch')
+    env:
+      MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+      MLFLOW_TRACKING_USERNAME: s-amin.mohamed
+      MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Configure DVC remote credentials
+        run: |
+          dvc remote modify origin --local auth basic
+          dvc remote modify origin --local user s-amin.mohamed
+          dvc remote modify origin --local password ${{ secrets.DAGSHUB_TOKEN }}
+      - name: Pull versioned data
+        run: dvc pull
+      - name: Retrain model (new MLflow run)
+        run: dvc repro --force train
+      - name: Evaluate on held-out test set
+        run: dvc repro evaluate
+      - name: Enforce performance floors
+        run: python scripts/check_threshold.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: model-info
+          path: model_info.txt
+      - name: Capture failure diagnostics
+        if: failure()
+        run: |
+          echo "=== Validate job failed ===" > error_logs.txt
+          echo "Commit: ${{ github.sha }}" >> error_logs.txt
+          pip list >> error_logs.txt
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: error-logs
+          path: error_logs.txt
+
+  # ── JOB 3 ── THE FAIRNESS GATE ─────────────────────────────────────────────
+  # A distinct, named job so the audit is visible as its own checkpoint in the
+  # Actions UI (and can be made a required status check via branch protection).
+  # check_fairness_gate.py exiting non-zero fails this job, which blocks deploy.
+  fairness_audit:
+    name: Fairness Audit (Fairlearn Gate)
+    runs-on: ubuntu-latest
+    needs: validate
+    env:
+      MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+      MLFLOW_TRACKING_USERNAME: s-amin.mohamed
+      MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: model-info
+      - name: Configure DVC remote credentials
+        run: |
+          dvc remote modify origin --local auth basic
+          dvc remote modify origin --local user s-amin.mohamed
+          dvc remote modify origin --local password ${{ secrets.DAGSHUB_TOKEN }}
+      - name: Pull test data
+        run: dvc pull data/processed/test.csv
+      - name: Run fairness audit (Fairlearn on held-out test set)
+        run: python -m src.fairness.fairness_audit
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fairness-report
+          path: metrics/fairness_report.json
+      - name: Enforce fairness gate
+        run: python scripts/check_fairness_gate.py
+
+  # ── JOB 4 ── deploy: only reachable when BOTH gates passed ────────────────
+  deploy:
+    name: Build Serving Image (model baked by Run ID)
+    runs-on: ubuntu-latest
+    needs: [validate, fairness_audit]
+    if: |
+      needs.validate.result == 'success' &&
+      needs.fairness_audit.result == 'success'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: model-info
+      - name: Read Run ID
+        id: runid
+        run: echo "run_id=$(cat model_info.txt)" >> "$GITHUB_OUTPUT"
+      - name: Build Docker image (BuildKit secret for MLflow token)
+        run: |
+          echo "${{ secrets.DAGSHUB_TOKEN }}" > mlflow_token.txt
+          docker build \
+            --secret id=mlflow_token,src=mlflow_token.txt \
+            --build-arg RUN_ID=${{ steps.runid.outputs.run_id }} \
+            --build-arg MLFLOW_TRACKING_URI=${{ secrets.MLFLOW_TRACKING_URI }} \
+            -t credit-risk-api:${{ steps.runid.outputs.run_id }} \
+            -f docker/Dockerfile .
+          rm mlflow_token.txt
+      - name: Smoke-test the image
+        run: |
+          docker run -d --name smoke -p 8000:8000 credit-risk-api:${{ steps.runid.outputs.run_id }}
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8000/health; then echo; echo "healthy"; break; fi
+            sleep 2
+            if [ "$i" = "30" ]; then echo "service never became healthy"; docker logs smoke; exit 1; fi
+          done
+          curl -sf http://localhost:8000/model-info
+      # Publishing to GHCR is deliberately deferred: the local Minikube/Kind
+      # demo loads the image directly. Uncomment to publish.
+      # - name: Push to GHCR
+      #   run: |
+      #     echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      #     docker tag credit-risk-api:${{ steps.runid.outputs.run_id }} ghcr.io/ameen-gamal/credit-risk-api:${{ steps.runid.outputs.run_id }}
+      #     docker push ghcr.io/ameen-gamal/credit-risk-api:${{ steps.runid.outputs.run_id }}

@@ -1,0 +1,5 @@
+[core]
+    remote = origin
+    analytics = false
+['remote "origin"']
+    url = https://dagshub.com/s-amin.mohamed/credit-risk-mlops-fairness.dvc

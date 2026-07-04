@@ -1,0 +1,27 @@
+# Exact pins = what this project was actually built and verified against
+# (Python 3.12). Loosen deliberately, not accidentally.
+
+# Core ML
+scikit-learn==1.6.1
+pandas==2.3.3
+numpy==2.0.2
+xgboost==2.1.4
+
+# Experiment tracking / data versioning
+mlflow==2.22.5
+dvc==3.67.1
+
+# Fairness (governance layer)
+fairlearn==0.12.0
+
+# Drift monitoring (0.4.x legacy Report API; 0.5+ is a breaking rewrite)
+evidently==0.4.40
+
+# Serving
+fastapi==0.139.0
+uvicorn[standard]==0.50.0
+pydantic==2.13.4
+prometheus-client==0.25.0
+
+# Config
+PyYAML==6.0.3

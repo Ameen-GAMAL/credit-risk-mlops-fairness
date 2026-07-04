@@ -1,0 +1,37 @@
+name: Scheduled Drift & Fairness-Drift Monitoring
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"   # weekly, Monday 06:00 UTC
+  workflow_dispatch:        # on-demand runs for demos
+
+jobs:
+  monitor:
+    name: Drift + Fairness Drift across simulated batches
+    runs-on: ubuntu-latest
+    env:
+      MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+      MLFLOW_TRACKING_USERNAME: s-amin.mohamed
+      MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Configure DVC remote credentials
+        run: |
+          dvc remote modify origin --local auth basic
+          dvc remote modify origin --local user s-amin.mohamed
+          dvc remote modify origin --local password ${{ secrets.DAGSHUB_TOKEN }}
+      - name: Pull reference set + simulated batches
+        run: dvc pull
+      - name: Run monitoring (Evidently drift + Fairlearn fairness drift)
+        run: python -m src.monitoring.run_monitoring
+      - name: Publish summary to workflow page
+        run: cat monitoring/reports/summary.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: monitoring-reports
+          path: monitoring/reports/

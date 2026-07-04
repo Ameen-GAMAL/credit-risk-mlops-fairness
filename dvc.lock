@@ -1,0 +1,176 @@
+schema: '2.0'
+stages:
+  fetch_data:
+    cmd: python -m src.data.fetch_data
+    deps:
+    - path: src/data/fetch_data.py
+      hash: md5
+      md5: 25a3684b9d0fdec1dd0f38b7f2374fa3
+      size: 838
+    params:
+      params.yaml:
+        fetch_data.openml_name: credit-g
+        fetch_data.openml_version: 1
+    outs:
+    - path: data/raw/credit_g.csv
+      hash: md5
+      md5: 02199e26df21550c063359d3f35c7beb
+      size: 140017
+  preprocess:
+    cmd: python -m src.data.preprocess
+    deps:
+    - path: data/raw/credit_g.csv
+      hash: md5
+      md5: 02199e26df21550c063359d3f35c7beb
+      size: 140017
+    - path: src/config.py
+      hash: md5
+      md5: 7a62187d97ff9d491052d80ef2a348ed
+      size: 2158
+    - path: src/data/preprocess.py
+      hash: md5
+      md5: 773b54ba26d30112ed74dc6bc5bb2325
+      size: 3306
+    params:
+      params.yaml:
+        preprocess.age_threshold: 25
+        preprocess.monitoring_pool_size: 0.2
+        preprocess.random_state: 42
+        preprocess.test_size: 0.3
+    outs:
+    - path: data/processed/monitoring_pool.csv
+      hash: md5
+      md5: 8b472ff272d4166abf0b136ebca6e74a
+      size: 29862
+    - path: data/processed/test.csv
+      hash: md5
+      md5: f9029102ea6d610bfa53f7ca3c954ce9
+      size: 45022
+    - path: data/processed/train.csv
+      hash: md5
+      md5: 01003c13e73951aae2b7a7f6504cd5a2
+      size: 74661
+  make_reference_and_batches:
+    cmd: python -m src.data.make_reference_and_batches
+    deps:
+    - path: data/processed/monitoring_pool.csv
+      hash: md5
+      md5: 8b472ff272d4166abf0b136ebca6e74a
+      size: 29862
+    - path: src/data/make_reference_and_batches.py
+      hash: md5
+      md5: cc81e62d1a833d1fcf3cad5da0cd3667
+      size: 3676
+    params:
+      params.yaml:
+        monitoring.batch_size: 120
+        monitoring.drift_injection_strength: 0.3
+        monitoring.inject_drift_from_batch: 4
+        monitoring.n_batches: 5
+        monitoring.random_state: 42
+    outs:
+    - path: data/reference/reference_batch.csv
+      hash: md5
+      md5: 8b472ff272d4166abf0b136ebca6e74a
+      size: 29862
+    - path: data/simulated_batches
+      hash: md5
+      md5: 0bd594a6d14b573bf914b82e500d57c9.dir
+      size: 90360
+      nfiles: 5
+  train:
+    cmd: python -m src.train
+    deps:
+    - path: data/processed/train.csv
+      hash: md5
+      md5: 01003c13e73951aae2b7a7f6504cd5a2
+      size: 74661
+    - path: src/config.py
+      hash: md5
+      md5: 7a62187d97ff9d491052d80ef2a348ed
+      size: 2158
+    - path: src/features/transformers.py
+      hash: md5
+      md5: d07d887d04a05330ceef483fc5545eb8
+      size: 2954
+    - path: src/train.py
+      hash: md5
+      md5: 90f053fd14050ecad06557c7bcf58138
+      size: 5966
+    params:
+      params.yaml:
+        train:
+          model_type: logreg
+          random_state: 42
+          mitigation: exponentiated_gradient
+          eg_constraint: equalized_odds
+          eg_eps: 0.03
+          logreg:
+            C: 1.0
+            max_iter: 2000
+            class_weight:
+          xgboost:
+            n_estimators: 200
+            max_depth: 4
+            learning_rate: 0.1
+    outs:
+    - path: metrics/train_metrics.json
+      hash: md5
+      md5: 678b4c736b1a7419bff162b6cf4c0b82
+      size: 164
+    - path: model_info.txt
+      hash: md5
+      md5: 0176344104a59966151ae6a152dd4556
+      size: 32
+  evaluate:
+    cmd: python -m src.evaluate
+    deps:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: f9029102ea6d610bfa53f7ca3c954ce9
+      size: 45022
+    - path: model_info.txt
+      hash: md5
+      md5: 0176344104a59966151ae6a152dd4556
+      size: 32
+    - path: src/evaluate.py
+      hash: md5
+      md5: 357ceb63d0bf4accc525e2cc6cf55510
+      size: 1366
+    outs:
+    - path: metrics/evaluation.json
+      hash: md5
+      md5: 4433608a12ddfe22bc164f2ef2ee53ef
+      size: 164
+  fairness_audit:
+    cmd: python -m src.fairness.fairness_audit
+    deps:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: f9029102ea6d610bfa53f7ca3c954ce9
+      size: 45022
+    - path: model_info.txt
+      hash: md5
+      md5: 0176344104a59966151ae6a152dd4556
+      size: 32
+    - path: src/fairness/fairness_audit.py
+      hash: md5
+      md5: b81f918052bde48a0c086f99d12a3272
+      size: 2841
+    - path: src/fairness/metrics.py
+      hash: md5
+      md5: 926810fd4c89a44419c902b38699d5bd
+      size: 2736
+    params:
+      params.yaml:
+        fairness:
+          protected_attributes:
+          - sex
+          - age_binary
+          demographic_parity_threshold: 0.1
+          equalized_odds_threshold: 0.1
+    outs:
+    - path: metrics/fairness_report.json
+      hash: md5
+      md5: 07a667c30395176244a0f004f97e03fd
+      size: 1210

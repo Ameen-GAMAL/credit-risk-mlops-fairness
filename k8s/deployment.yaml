@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: credit-risk-api
+  namespace: credit-risk-mlops
+  labels:
+    app: credit-risk-api
+spec:
+  replicas: 2   # the Service demonstrably load-balances, not a single-pod toy
+  selector:
+    matchLabels:
+      app: credit-risk-api
+  template:
+    metadata:
+      labels:
+        app: credit-risk-api
+    spec:
+      containers:
+        - name: credit-risk-api
+          # Minikube: build inside its docker env first -> eval $(minikube docker-env)
+          # Kind:     kind load docker-image credit-risk-api:local
+          image: credit-risk-api:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: credit-risk-config
+          # Readiness flips fast (model loads in seconds) and gates traffic;
+          # liveness is deliberately more lenient so a briefly-slow pod gets
+          # restarted only when actually wedged, not restart-looped.
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

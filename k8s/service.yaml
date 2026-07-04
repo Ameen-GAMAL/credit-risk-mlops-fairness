@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: credit-risk-api-service
+  namespace: credit-risk-mlops
+spec:
+  selector:
+    app: credit-risk-api
+  ports:
+    - port: 80
+      targetPort: 8000
+  # Minikube: `minikube service credit-risk-api-service -n credit-risk-mlops`
+  # Kind:     `kubectl port-forward svc/credit-risk-api-service 8000:80 -n credit-risk-mlops`
+  type: NodePort

@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+
+# MLflow local tracking (CI/DagsHub is the shared tracking server)
+mlruns/
+mlartifacts/
+
+# Locally downloaded model artifacts
+artifacts/
+
+# Secrets — never commit
+.env
+mlflow_token.txt
+k8s/secret.yaml
+
+# DVC internals (data files are gitignored by DVC itself via data/*/.gitignore)
+.dvc/cache/
+.dvc/tmp/
+.dvc/config.local
+
+# Evidently HTMLs are ~3MB each — keep one representative sample in git
+# (batch_05: the batch that trips BOTH alarms); regenerate the rest with
+# `python -m src.monitoring.run_monitoring`.
+monitoring/reports/*.html
+!monitoring/reports/batch_05_drift.html
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

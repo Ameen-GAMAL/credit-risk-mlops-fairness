@@ -1,0 +1,58 @@
+{
+  "generated_at": "2026-07-04T19:38:33.851709+00:00",
+  "model_run_id": "0258d4b3d2b7443798c2d1eb38cdccb9",
+  "reference_rows": 200,
+  "fairness_drift_threshold": 0.15,
+  "reference_fairness": {
+    "sex": {
+      "demographic_parity_difference": 0.0095,
+      "equalized_odds_difference": 0.05
+    },
+    "age_binary": {
+      "demographic_parity_difference": 0.0714,
+      "equalized_odds_difference": 0.3333
+    }
+  },
+  "batches": [
+    {
+      "batch": "batch_01",
+      "dataset_drift": false,
+      "n_drifted_columns": 0,
+      "prediction_drift": false,
+      "fairness_drift": false,
+      "any_alarm": false
+    },
+    {
+      "batch": "batch_02",
+      "dataset_drift": false,
+      "n_drifted_columns": 0,
+      "prediction_drift": false,
+      "fairness_drift": false,
+      "any_alarm": false
+    },
+    {
+      "batch": "batch_03",
+      "dataset_drift": false,
+      "n_drifted_columns": 1,
+      "prediction_drift": false,
+      "fairness_drift": false,
+      "any_alarm": false
+    },
+    {
+      "batch": "batch_04",
+      "dataset_drift": true,
+      "n_drifted_columns": 3,
+      "prediction_drift": false,
+      "fairness_drift": false,
+      "any_alarm": true
+    },
+    {
+      "batch": "batch_05",
+      "dataset_drift": true,
+      "n_drifted_columns": 3,
+      "prediction_drift": false,
+      "fairness_drift": true,
+      "any_alarm": true
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+fetch_data:
+  openml_name: credit-g
+  openml_version: 1
+
+preprocess:
+  # test gets 30% (not the usual 20%): the fairness gate computes equalized
+  # odds on per-group TPR/FPR cells, and with a 20% split the female cells
+  # were ~20 rows — one individual moved EO by ±0.05. Precision of the GATE
+  # is worth more here than a larger monitoring pool (whose batches are
+  # bootstrap resamples anyway).
+  test_size: 0.30
+  monitoring_pool_size: 0.20  # reserved for simulated production traffic (never seen in training/eval)
+  random_state: 42
+  age_threshold: 25           # age_binary: >= 25 -> "adult", < 25 -> "young"
+
+train:
+  model_type: logreg          # logreg | xgboost — switching re-runs `dvc repro` from train onward only
+  random_state: 42
+  # Baseline (mitigation: none) violated the fairness gate: DP_diff(sex)=0.139,
+  # EO_diff(sex)=0.177, EO_diff(age)=0.139 — proxy leakage despite the model
+  # never seeing protected attributes. class_weight=balanced made it worse.
+  # ExponentiatedGradient (in-processing reduction) enforces the constraint at
+  # training time and needs NO protected attributes at inference (serving-safe).
+  mitigation: exponentiated_gradient   # none | exponentiated_gradient
+  eg_constraint: equalized_odds        # equalized_odds | demographic_parity
+  # eps swept over {0.005..0.05}: tighter bounds over-contorted the small
+  # age_binary group (EO_age stuck at ~0.102); 0.03 passes all four gate
+  # metrics with the best accuracy trade-off. See docs/model_card.md.
+  eg_eps: 0.03
+  logreg:
+    C: 1.0
+    max_iter: 2000
+    class_weight: null
+  xgboost:
+    n_estimators: 200
+    max_depth: 4
+    learning_rate: 0.1
+
+evaluate:
+  # CI accuracy gate floors (scripts/check_threshold.py). Set ~5pts below the
+  # baseline run so retrain variance doesn't flake the pipeline.
+  min_accuracy: 0.70
+  min_f1: 0.78
+
+fairness:
+  protected_attributes: [sex, age_binary]
+  # CI gate thresholds on ABSOLUTE metric values (scripts/check_fairness_gate.py).
+  # 0.10 follows the common "80% rule" analog used as a rule of thumb in
+  # fairness auditing; see docs/model_card.md for how these were reviewed
+  # against the baseline audit.
+  demographic_parity_threshold: 0.10
+  equalized_odds_threshold: 0.10
+
+monitoring:
+  n_batches: 5
+  batch_size: 120             # bootstrap-resampled from the monitoring pool
+  random_state: 42
+  inject_drift_from_batch: 4  # batches 1-3 clean, 4-5 drifted -> detector must flag exactly these
+  drift_injection_strength: 0.30
+  # Threshold on the CHANGE of demographic-parity difference vs. the
+  # reference baseline (DP only — EO is reported but not alarmed; see
+  # src/monitoring/fairness_drift.py). Set above the empirically observed
+  # clean-batch bootstrap noise floor (max |delta| ~0.11 at batch_size=120).
+  fairness_drift_threshold: 0.15

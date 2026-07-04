@@ -1,0 +1,45 @@
+{
+  "run_id": "0258d4b3d2b7443798c2d1eb38cdccb9",
+  "generated_at": "2026-07-04T16:43:53.092261+00:00",
+  "n_test_rows": 300,
+  "thresholds": {
+    "demographic_parity_threshold": 0.1,
+    "equalized_odds_threshold": 0.1
+  },
+  "metrics": {
+    "sex": {
+      "demographic_parity_difference": 0.028186274509803932,
+      "equalized_odds_difference": 0.08297413793103448,
+      "selection_rate_by_group": {
+        "female": 0.7708333333333334,
+        "male": 0.7990196078431373
+      },
+      "accuracy_by_group": {
+        "female": 0.7916666666666666,
+        "male": 0.7696078431372549
+      },
+      "group_counts": {
+        "male": 204,
+        "female": 96
+      }
+    },
+    "age_binary": {
+      "demographic_parity_difference": 0.09577172991807137,
+      "equalized_odds_difference": 0.09671179883945835,
+      "selection_rate_by_group": {
+        "adult": 0.803088803088803,
+        "young": 0.7073170731707317
+      },
+      "accuracy_by_group": {
+        "adult": 0.7992277992277992,
+        "young": 0.6341463414634146
+      },
+      "group_counts": {
+        "adult": 259,
+        "young": 41
+      }
+    }
+  },
+  "violations": [],
+  "passed": true
+}

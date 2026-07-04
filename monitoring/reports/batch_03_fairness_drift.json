@@ -1,0 +1,31 @@
+{
+  "sex": {
+    "demographic_parity_difference": {
+      "reference": 0.0095,
+      "current": 0.0873,
+      "delta": 0.0778,
+      "drift_flagged": false
+    },
+    "equalized_odds_difference": {
+      "reference": 0.05,
+      "current": 0.1413,
+      "delta": 0.0913,
+      "drift_flagged": false
+    }
+  },
+  "age_binary": {
+    "demographic_parity_difference": {
+      "reference": 0.0714,
+      "current": 0.1456,
+      "delta": 0.0741,
+      "drift_flagged": false
+    },
+    "equalized_odds_difference": {
+      "reference": 0.3333,
+      "current": 0.4,
+      "delta": 0.0667,
+      "drift_flagged": false
+    }
+  },
+  "any_flagged": false
+}
