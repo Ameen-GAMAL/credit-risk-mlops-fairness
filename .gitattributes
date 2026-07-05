@@ -2,3 +2,4 @@
 *.png binary
 *.jpg binary
 *.pkl binary
+monitoring/reports/*.html linguist-generated
