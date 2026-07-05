@@ -33,3 +33,7 @@ monitoring/reports/*.html
 Thumbs.db
 .vscode/
 .idea/
+
+# Space deploy bundle (models live in MLflow, not git; src copy is generated)
+monitoring_dashboard/model/
+monitoring_dashboard/src/

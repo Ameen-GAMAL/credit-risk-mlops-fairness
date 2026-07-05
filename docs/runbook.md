@@ -148,6 +148,25 @@ synthetic age/credit-amount shift). In CI, the same run happens weekly via
 `.github/workflows/monitoring.yml` and prints the table to the workflow
 summary page.
 
+## 8. Monitoring dashboard (Hugging Face Space)
+
+Live at https://huggingface.co/spaces/Am33n-21/credit-risk-fairness-monitor
+(Docker Space — HF no longer offers a native Streamlit SDK). Local run:
+
+```bash
+pip install -r monitoring_dashboard/requirements.txt
+streamlit run monitoring_dashboard/app.py
+```
+
+Redeploy after a model/monitoring update (bundles the pinned model +
+`FairPipeline` module into the Space; both are gitignored — models live in
+MLflow, not git):
+
+```bash
+# needs MLFLOW_* env vars (§2) for the model download
+python scripts/deploy_dashboard.py --token <HF_WRITE_TOKEN>
+```
+
 ## Troubleshooting
 
 - **`dvc pull` 403** — token wrong/expired, or `--local` remote creds not set
@@ -156,6 +175,9 @@ summary page.
   the password is the token itself.
 - **Evidently import errors** — you're on Python 3.13 or evidently ≥0.5
   (breaking API change); use Python 3.12 and the pinned requirements.
+- **HF uploads 403 despite a write token** — check for a stale `HF_TOKEN`
+  environment variable; it silently overrides `hf auth login`. Pass the token
+  explicitly (`--token`) or fix the env var.
 - **OneDrive** — this repo lives under OneDrive; if sync churn on `.venv/`
   becomes annoying, either mark `.venv` as "always keep on this device /
   don't sync" or move the clone outside the synced tree. Functionally

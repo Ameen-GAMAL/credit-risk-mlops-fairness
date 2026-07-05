@@ -1,4 +1,10 @@
 streamlit>=1.37
 plotly>=5.20
-pandas>=2.1
 requests>=2.31
+tabulate>=0.9
+
+# pinned to the training environment so the bundled model.pkl unpickles cleanly
+pandas==2.3.3
+numpy==2.0.2
+scikit-learn==1.6.1
+fairlearn==0.12.0
