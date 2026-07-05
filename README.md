@@ -27,6 +27,7 @@ linter ──▶ validate ──▶ fairness_audit ──▶ deploy
 (threshold deliberately tightened below the shipped model's DP — fairness
 job red, deploy *skipped*)
 · [experiment tracking on DagsHub MLflow](https://dagshub.com/s-amin.mohamed/credit-risk-mlops-fairness.mlflow)
+· [**live monitoring dashboard** on HF Spaces](https://huggingface.co/spaces/Am33n-21/credit-risk-fairness-monitor)
 
 ## Why this project is interesting
 
@@ -45,7 +46,10 @@ job red, deploy *skipped*)
    batches (versioned with DVC, deterministic) include a targeted shock —
    "young applicants start requesting much larger loans" — and the weekly
    monitoring job flags the resulting demographic-parity drift with the
-   *same metric implementation* the CI gate uses.
+   *same metric implementation* the CI gate uses. A
+   [Streamlit dashboard](https://huggingface.co/spaces/Am33n-21/credit-risk-fairness-monitor)
+   (in [monitoring_dashboard/](monitoring_dashboard/)) renders the gate
+   status and per-batch drift live from the repo's committed JSON artifacts.
 
 ## Results (held-out test set, n = 300)
 
