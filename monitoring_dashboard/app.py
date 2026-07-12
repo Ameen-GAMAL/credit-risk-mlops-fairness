@@ -37,8 +37,8 @@ LOCAL_ROOT = HERE.parent
 LINKS = {
     "GitHub repo": f"https://github.com/{REPO}",
     "MLflow (DagsHub)": "https://dagshub.com/s-amin.mohamed/credit-risk-mlops-fairness.mlflow",
-    "CI: gates green": f"https://github.com/{REPO}/actions/runs/28720895645",
-    "CI: gate blocking deploy": f"https://github.com/{REPO}/actions/runs/28721066495",
+    "CI: gates green": f"https://github.com/{REPO}/actions/runs/29173438514",
+    "CI: gate blocking deploy": f"https://github.com/{REPO}/actions/runs/29173416727",
 }
 
 FORM_DEFAULTS = {

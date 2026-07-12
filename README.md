@@ -22,8 +22,8 @@ linter ──▶ validate ──▶ fairness_audit ──▶ deploy
 ```
 
 **Live proof, not claims:**
-[all four jobs green](https://github.com/Ameen-GAMAL/credit-risk-mlops-fairness/actions/runs/28720895645)
-· [the gate actually blocking a deploy](https://github.com/Ameen-GAMAL/credit-risk-mlops-fairness/actions/runs/28721066495)
+[all four jobs green](https://github.com/Ameen-GAMAL/credit-risk-mlops-fairness/actions/runs/29173438514)
+· [the gate actually blocking a deploy](https://github.com/Ameen-GAMAL/credit-risk-mlops-fairness/actions/runs/29173416727)
 (threshold deliberately tightened below the shipped model's DP — fairness
 job red, deploy *skipped*)
 · [experiment tracking on DagsHub MLflow](https://dagshub.com/s-amin.mohamed/credit-risk-mlops-fairness.mlflow)
