@@ -48,7 +48,7 @@ fairness:
   # 0.10 follows the common "80% rule" analog used as a rule of thumb in
   # fairness auditing; see docs/model_card.md for how these were reviewed
   # against the baseline audit.
-  demographic_parity_threshold: 0.01
+  demographic_parity_threshold: 0.10
   equalized_odds_threshold: 0.10
 
 monitoring:
